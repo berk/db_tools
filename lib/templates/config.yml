@@ -1,0 +1,12 @@
+# DB Tools Settings
+---
+connections:
+  temp:
+    adapter: 
+    host:
+    username:
+    password:
+    database:
+
+default:
+  connection: temp

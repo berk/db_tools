@@ -1,0 +1,14 @@
+<div>
+  <h1>Photo Organizer</h1>
+  <!--
+    By default error will catch Sinatra::ServerError
+    Sinatra will pass you the error via the ‘sinatra.error’ 
+    in request.env
+  -->
+  <p>
+    <% e = request.env['sinatra_error'] %>
+    <%= p e.to_s %>
+    <%= p e.backtrace.join("\n") %>
+    Application error
+  </p>
+</div>

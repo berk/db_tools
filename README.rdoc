@@ -1,0 +1,9 @@
+= Introduction
+
+This gem is set of useful commands for managing databases.
+
+= Contribution
+
+Clone the repository, make any changes you like and send me a pull request.
+
+
