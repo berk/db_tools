@@ -1,5 +1,5 @@
 #--
-# Copyright (c) 2012 Michael Berkovich
+# Copyright (c) 2013 Michael Berkovich
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -54,15 +54,10 @@ class DbTools::Base < Thor
       config["default"]
     end
 
-    def default_connection
-      config['connections'][defaults["connection"]]
+    def connection(key = nil)
+      key ||= defaults["connection"]
+      DbTools::Models::Connection.new(config['connections'][key].merge(:name => key))
     end
-    
-    # def connection(opts = {})
-    #   key = opts[:name] || defaults["connection"]
-    #   @connections ||= {}
-    #   @connections[key] ||= DbTools::Models::Connection.new(config["connections"][key])
-    # end
 
     def format_number(n)
       n.to_s.reverse.gsub(/...(?=.)/,'\&,').reverse

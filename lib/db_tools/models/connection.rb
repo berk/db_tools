@@ -21,8 +21,8 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #++
 
-module DbTools
-  VERSION = "0.0.1"
+class DbTools::Models::Connection < DbTools::Models::Base
+  
+  attributes :name, :adapter, :host, :username, :password, :database
+
 end
-
-

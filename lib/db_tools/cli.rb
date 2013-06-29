@@ -1,5 +1,5 @@
 #--
-# Copyright (c) 2012 Michael Berkovich
+# Copyright (c) 2013 Michael Berkovich
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -106,22 +106,15 @@ class DbTools::Cli < DbTools::Base
     method_option :connection, :type => :string, :aliases => "-c", :required => false, :banner => "Connection name", :default => nil
     method_option :filter, :type => :string, :aliases => "-f", :required => false, :banner => "Only include tables that match filter value", :default => nil
     def tables
-      connection_name = options[:connection] || defaults['connection']
-      ActiveRecord::Base.establish_connection(config['connections'][connection_name])
+      conn = connection(options[:connection])
+      ActiveRecord::Base.establish_connection(conn.to_hash)
 
-      tables = []
-      ActiveRecord::Base.connection.tables.sort.each do |table_name|
-        next if options[:filter] and not table_name.index(options[:filter])
-
-        table = DbTools::Models::Table.init(Class.new(ActiveRecord::Base){self.table_name = table_name})
-
-        info = {:name => table_name}
-        info[:columns] = table.columns.size
-        # info[:rows] = cls.count
-        tables << info
+      database = DbTools::Models::Database.init(conn, ActiveRecord::Base.connection.tables, options)
+      tables = database.tables(options).collect do |table|
+        {:name => table.name, :columns => table.columns.size}
       end
 
-      header = "Tables in #{connection_name}"
+      header = "Tables in #{conn.name}"
       header << " that match \"#{options['filter']}\"" if options['filter']
 
       paginate(tables, :header => header, :with_numbers => true)
@@ -131,11 +124,12 @@ class DbTools::Cli < DbTools::Base
     desc 'describe', "Displays table structure"
     method_option :connection, :type => :string, :aliases => "-c", :required => false, :banner => "Connection name", :default => nil
     def describe(table_name)
-      connection_name = options[:connection] || defaults['connection']
-      ActiveRecord::Base.establish_connection(config['connections'][connection_name])
+      conn = connection(options[:connection])
+      ActiveRecord::Base.establish_connection(conn.to_hash)
+      
       table = DbTools::Models::Table.init(Class.new(ActiveRecord::Base){self.table_name = table_name})
 
-      paginate(table.columns.collect{|c| c.to_hash}, :header => "#{table_name} in #{connection_name}", :with_numbers => true)
+      paginate(table.columns.collect{|c| c.to_hash}, :header => "#{table.name} in #{conn.name}", :with_numbers => true)
     end
 
     map 'q' => :query
@@ -143,8 +137,9 @@ class DbTools::Cli < DbTools::Base
     method_option :connection, :type => :string, :aliases => "-c", :required => false, :banner => "Connection name", :default => nil
     method_option :json, :type => :string, :aliases => "-j", :required => false, :banner => "Connection name", :default => nil
     def query(sql)
-      connection_name = options[:connection] || defaults['connection']
-      ActiveRecord::Base.establish_connection(config['connections'][connection_name])
+      conn = connection(options[:connection])
+      ActiveRecord::Base.establish_connection(conn.to_hash)
+
       results = ActiveRecord::Base.connection.execute(sql)
 
       if options['json']
@@ -152,47 +147,63 @@ class DbTools::Cli < DbTools::Base
         return
       end
 
-      paginate(results, :header => "#{connection_name}: #{sql}")
+      paginate(results, :header => "#{conn.name}: #{sql}")
     end
-
 
     desc 'compare', 'Compares a table between two connections'
     method_option :source, :type => :string, :aliases => "-s", :required => true, :banner => "Source connection", :default => nil
     method_option :target, :type => :string, :aliases => "-t", :required => true, :banner => "Target connection", :default => nil
     def compare(table_name)
-      ActiveRecord::Base.establish_connection(config['connections'][options[:source]])
+      source_conn = connection(options[:source])
+      ActiveRecord::Base.establish_connection(source_conn.to_hash)
       source_table = DbTools::Models::Table.init(Class.new(ActiveRecord::Base){self.table_name = table_name})
       paginate(source_table.columns.collect{|c| c.to_hash}, :header => "#{source_table.name} in #{options[:source]}", :with_numbers => true)
 
-      ActiveRecord::Base.establish_connection(config['connections'][options[:target]])
+      target_conn = connection(options[:target])
+      ActiveRecord::Base.establish_connection(target_conn.to_hash)
       target_table = DbTools::Models::Table.init(Class.new(ActiveRecord::Base){self.table_name = table_name})
       paginate(target_table.columns.collect{|c| c.to_hash}, :header => "#{target_table.name} in #{options[:target]}", :with_numbers => true)
 
       results = source_table.compare(target_table)
-      # pp :source, source_table.columns.collect{|c| c.name}
-      # pp :target, target_table.columns.collect{|c| c.name}
-      pp results
+      say("Summary of changes:")
+      say
+
+      say("Changed columns: #{results[:changed].join(', ')}") if results[:changed].any?
+      say("Added columns: #{results[:added].join(', ')}") if results[:added].any?
+      say("Removed columns: #{results[:deleted].join(', ')}") if results[:deleted].any?
+      say
+
+      say("ActiveRecord migration:")
+      say
+
+      migration = DbTools::Models::Migration.init(source_table, target_table)
+      say(migration.generate)
+      say
     end
 
-    desc 'migrate', 'Compares a table between databases'
-    def migrate(source, target)
-      ActiveRecord::Base.establish_connection(config['connections'][source])
-      source_table = DbTools::Models::Table.init(Class.new(ActiveRecord::Base){self.table_name = table_name})
+    desc 'migrate', 'Generates migrations between two database'
+    method_option :source, :type => :string, :aliases => "-s", :required => true,   :banner => "Source connection", :default => nil
+    method_option :target, :type => :string, :aliases => "-t", :required => true,   :banner => "Target connection", :default => nil
+    method_option :filter, :type => :string, :aliases => "-f", :required => false,  :banner => "Target connection", :default => nil
+    def migrate
+      source_conn = connection(options[:source])
+      ActiveRecord::Base.establish_connection(source_conn.to_hash)
+      source_database = DbTools::Models::Database.init(source_conn, ActiveRecord::Base.connection.tables, options)
 
-      ActiveRecord::Base.establish_connection(config['connections'][target])
-      target_table = DbTools::Models::Table.init(Class.new(ActiveRecord::Base){self.table_name = table_name})
+      target_conn = connection(options[:target])
+      ActiveRecord::Base.establish_connection(target_conn.to_hash)
+      target_database = DbTools::Models::Database.init(target_conn, ActiveRecord::Base.connection.tables, options)
 
-      pp :source, source_table.columns.collect{|c| c.name}
+      results = source_database.compare(target_database, options)
 
-      pp :target, target_table.columns.collect{|c| c.name}
+      say("Summary of changes:")
+      say
 
-      # columns = table.columns.collect{|c| c.to_hash}
+      say("Changed tables: #{results[:changed].join(', ')}") if results[:changed].any?
+      say("\nAdded tables: #{results[:added].join(', ')}") if results[:added].any?
+      say("\nRemoved tables: #{results[:deleted].join(', ')}") if results[:deleted].any?
+      say
 
-      # # cls.columns.each do |c|
-      # #   columns << {:name => c.name, :type => c.type, :sql_type => c.sql_type, :limit => c.limit, :default => c.default, :scale => c.scale, :precision => c.precision, :primary => c.primary, :null => c.null, :coder => c.coder}
-      # # end
-
-      # paginate(columns, :header => "#{table_name}", :with_numbers => true)
     end
 
 
