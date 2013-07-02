@@ -27,37 +27,10 @@ require 'thor'
 require 'pp'
 require 'active_record'
 
-CONFIG_PATH = File.join(ENV['HOME'],'.config','dbtools')
-
 class DbTools::Base < Thor
     include Thor::Actions
 
     protected
-
-    def config
-      @config ||= begin
-        unless File.exists?("#{CONFIG_PATH}/config.yml") 
-          FileUtils.mkdir_p(CONFIG_PATH)
-          template('templates/config.yml', "#{CONFIG_PATH}/config.yml")
-        end
-        YAML.load(File.read("#{CONFIG_PATH}/config.yml"))
-      end
-    end
-
-    def update_config
-      File.open("#{CONFIG_PATH}/config.yml", "w") do |f|
-        f.write(config.to_yaml)
-      end        
-    end
-
-    def defaults
-      config["default"]
-    end
-
-    def connection(key = nil)
-      key ||= defaults["connection"]
-      DbTools::Models::Connection.new(config['connections'][key].merge(:name => key))
-    end
 
     def format_number(n)
       n.to_s.reverse.gsub(/...(?=.)/,'\&,').reverse
@@ -100,12 +73,16 @@ class DbTools::Base < Thor
         cols
       end
 
+      if opts[:key]
+        opts[:columns] = opts[:columns] - [opts[:key].to_sym]
+      end
+
       page = 0
       while true
         table = []
         titles = []
         unless opts[:skip_title]
-          if opts[:with_numbers]
+          if opts[:with_numbers] or opts[:key]
             titles << ""
           end
 
@@ -131,6 +108,8 @@ class DbTools::Base < Thor
           row = []
           if opts[:with_numbers]
             row << "  #{start_index + index + 1}:  "
+          elsif opts[:key]  
+            row << " #{result[opts[:key]]}: "
           end
           opts[:columns].each do |c|
             if c.is_a?(Symbol)

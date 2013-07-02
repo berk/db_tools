@@ -21,23 +21,29 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #++
 
+require 'erb'
+
 class DbTools::Models::Database < DbTools::Models::Base
   belongs_to :connection
   has_many :tables
 
-  def self.init(connection, tables, options = {})
+  def self.init(connection, options = {})
     database = new({
       :connection => connection
     })
 
     database.tables = []
-    tables.sort.each do |table_name|
-      table = DbTools::Models::Table.init(Class.new(ActiveRecord::Base){self.table_name = table_name})
+    connection.tables.sort.each do |table_name|
+      table = DbTools::Models::Table.init(connection, table_name, options)
       table.database = database
       database.tables << table
     end
 
     database
+  end
+
+  def name
+    connection.database
   end
 
   def tables(options = {})
@@ -94,6 +100,7 @@ class DbTools::Models::Database < DbTools::Models::Base
 
   def migrate(database)
     changes = compare(database)
+
   end
 
 end

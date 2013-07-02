@@ -34,16 +34,32 @@ class DbTools::Server::App < Sinatra::Base
   set :json_encoder, :to_json
 
   get '/' do
-    # @folder = PhotoOrganizer::Models::Folder.new('.')
     erb :'/index'
   end
 
-  get '/photos' do 
-    # path = ".#{params[:path]}"
-    # folder = PhotoOrganizer::Models::Folder.new(path)
-    # photos = folder.photos.collect{|photo| photo.to_glance_hash}
-    # pp photos
-    # photos.to_json
+  post '/tree' do 
+    pp params
+
+    if params["node"] == 'connections'
+      return DbTools::Config.connections.collect{|con| con.to_ext_hash}.to_json
+    end
+
+    path = params["node"].split('/')
+    last = path.last.split(':')
+
+    conn = DbTools::Config.connection(path.first.split(':').last)
+
+    if last.first == 'table'
+
+    end
+
+    if last.first == 'connection'
+      database = DbTools::Models::Database.init(conn)
+      tables = database.tables.collect{ |table|
+        table.to_ext_hash
+      }
+      tables.to_json
+    end
   end
   
 end

@@ -25,4 +25,35 @@ class DbTools::Models::Connection < DbTools::Models::Base
   
   attributes :name, :adapter, :host, :username, :password, :database
 
+  def establish
+    ActiveRecord::Base.establish_connection(self.to_hash)    
+    self
+  end
+
+  def tables
+    ActiveRecord::Base.connection.tables
+  end
+
+  def execute(sql)
+    ActiveRecord::Base.connection.execute(sql)
+  end
+
+  def columns(table_name)
+    ActiveRecord::Base.connection.columns(table_name)
+  end
+
+  def indexes(table_name)
+    ActiveRecord::Base.connection.indexes(table_name)
+  end
+
+  def to_ext_hash
+    {
+      'id'    => "connection:#{name}",
+      'key'   => "connection",
+      'label' => adapter,
+      'text'  => name,
+      'cls'   => 'folder',
+    }
+  end
+
 end

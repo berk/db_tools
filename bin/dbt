@@ -27,8 +27,9 @@
 Signal.trap(:INT) { abort "\nAborting database tools task." }
 
 [ 
-  'namespace.rb', 'base.rb', 'cli.rb',
-  'models/base.rb', 'models/connection.rb', 'models/database.rb', 'models/table.rb', 'models/column.rb', 'models/migration.rb',
+  'namespace.rb', 'config.rb', 'base.rb', 'cli.rb',
+  'models/base.rb', 'models/connection.rb', 'models/database.rb', 'models/table.rb', 'models/column.rb', 'models/index.rb',
+  'models/migrations/base.rb', 'models/migrations/table.rb', 'models/migrations/database.rb',
   'server/app.rb'
 ].each do |f|
   require File.expand_path(File.join(File.dirname(__FILE__), "../lib/db_tools/#{f}"))

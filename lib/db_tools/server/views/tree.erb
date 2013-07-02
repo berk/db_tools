@@ -1,0 +1,81 @@
+var lastEditedNode = null;
+
+var treeToolbar = new Ext.Toolbar({
+    items:[{
+        text: 'Add',
+        handler: function() {},
+    }, '-', {
+        id: 'edit_folder_button',
+        text: 'Edit',
+        handler: function() {},
+        disabled: true
+    }, '-', {
+        text: 'Reload',
+        handler: function(){
+          location.reload();
+        }
+    }]
+});
+
+var tree = new Ext.tree.TreePanel({
+     animate:true,
+     enableDD:false,
+     containerScroll: true,
+     rootVisible:true,
+     dataUrl: '/tree',
+     root: {
+        nodeType: 'async',
+        text: 'Connections',
+        draggable: false,
+        id: 'connections',
+        key: 'conncetions'
+     },
+
+     // layout
+     region:'west',
+     width: 320,
+     minSize: 100,
+     maxSize: 550,
+     split:true,
+     
+     // panel
+     title:'Tables',
+     autoScroll:true,
+     tbar: treeToolbar,
+     margins: '2 0 2 2',
+     
+     listeners: {
+      click: function(n) {
+          selectFolder(n);
+      },
+      dblclick: function(n) {
+          editFolder();
+          return false;
+      }
+    }
+});
+
+tree.getRootNode().expand();
+
+function selectFolder(node) {
+  if (node == null)
+    return;
+  
+  node.select();
+  // node.expand();  
+  
+  gridDataStore.proxy.setUrl('/table?name=' + node.attributes.id, true);
+  gridDataStore.reload();
+  gridToolbar.items.get("edit_property_button").disable();
+  gridToolbar.items.get("delete_property_button").disable();
+  gridToolbar.items.get("revision_property_button").disable();
+
+  if (node != tree.getRootNode()) {
+    treeToolbar.items.get("edit_folder_button").enable();
+    treeToolbar.items.get("delete_folder_button").enable();
+  } else {
+    treeToolbar.items.get("edit_folder_button").disable();
+    treeToolbar.items.get("delete_folder_button").disable();
+  }
+  treeToolbar.items.get("revisions_folder_button").enable();
+}

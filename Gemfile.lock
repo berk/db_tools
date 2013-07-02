@@ -2,7 +2,8 @@ PATH
   remote: .
   specs:
     dbtools (0.0.1)
-      activerecord
+      activerecord (~> 4.0.0)
+      pg
       sinatra
       thor (~> 0.16.0)
 
@@ -30,6 +31,7 @@ GEM
     i18n (0.6.4)
     minitest (4.7.5)
     multi_json (1.7.7)
+    pg (0.15.1)
     rack (1.5.2)
     rack-protection (1.5.0)
       rack

@@ -20,6 +20,7 @@ Gem::Specification.new do |spec|
   spec.require_path = ['lib', 'lib/db_tools']
 
   spec.add_dependency 'thor', '~> 0.16.0'
-  spec.add_dependency 'activerecord'
+  spec.add_dependency 'activerecord', '~> 4.0.0'
+  spec.add_dependency 'pg'
   spec.add_dependency 'sinatra'
 end

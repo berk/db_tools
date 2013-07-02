@@ -23,6 +23,8 @@
 
 module DbTools
   module Models
+    module Migrations
+    end
   end
   module Tasks
   end

@@ -32,4 +32,29 @@ class DbTools::Models::Column < DbTools::Models::Base
     true
   end
 
+  def options(opts = {})
+    sections = []
+    sections << ":limit => #{self.limit}" if self.limit
+    sections << ":scale => #{self.scale}" if self.scale
+    sections << ":precision => #{self.precision}" if self.precision
+    sections << ":default => #{self.default}" if self.default
+    sections << ":null => #{self.null}"
+    sections
+  end
+
+  def statement(type, opts = {})
+    case type
+    when :add 
+      return "add_column :#{table.name}, :#{self.name}, :#{self.type}, #{options.join(', ')}"
+    when :change 
+      return "change_column :#{table.name}, :#{self.name}, :#{self.type}, #{options.join(', ')}"
+    when :remove 
+      return "remove_column :#{table.name}, :#{self.name}"
+    when :rename 
+      return "rename_column :#{table.name}, :#{self.name}, :#{opts[:name]}"
+    end
+
+    raise "Unknown statement type"
+  end
+
 end

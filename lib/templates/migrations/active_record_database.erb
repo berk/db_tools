@@ -1,0 +1,19 @@
+class <%=@migration.name%> < ActiveRecord::Migration
+
+  def self.up
+    <%=@migration.changes_up.join("\n    ") %>
+    
+    <%=@migration.additions_up.join("\n    ") %>
+    
+    <%=@migration.deletions_up.join("\n    ") %>
+  end
+
+  def self.down
+    <%=@migration.changes_down.join("\n    ")%>
+
+    <%=@migration.additions_down.join("\n    ")%>
+
+    <%=@migration.deletions_down.join("\n    ")%>
+  end
+  
+end
