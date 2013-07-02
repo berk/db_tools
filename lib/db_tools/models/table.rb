@@ -112,7 +112,7 @@ class DbTools::Models::Table < DbTools::Models::Base
     @indexes_by_name ||= begin
       indxs = {}  
       indexes.each do |i|
-        indxs[column.name] = i
+        indxs[i.name] = i
       end
       indxs
     end
@@ -182,6 +182,9 @@ class DbTools::Models::Table < DbTools::Models::Base
         lines << "#{opts[:spacer]}  t.#{col.type}#{name_spacer(col.type)}:#{col.name}, #{col.options(:skip_default => true).join(', ')}"
       end
       lines << "#{opts[:spacer]}end"
+      indexes.each do |ind|
+        lines << "#{opts[:spacer]}#{ind.statement(:add)}"
+      end
       return lines.join("\n")
     when :drop 
       return "drop table :#{name}"

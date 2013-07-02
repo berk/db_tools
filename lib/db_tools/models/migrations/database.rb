@@ -23,13 +23,14 @@
 
 class DbTools::Models::Migrations::Database < DbTools::Models::Migrations::Base
   
-  attributes :name, :source_database, :target_database, :changed_tables, :added_tables, :deleted_tables
+  attributes :name, :options, :source_database, :target_database, :changed_tables, :added_tables, :deleted_tables
 
-  def self.init(source_database, target_database, opts = {})
+  def self.init(source_database, target_database, options = {})
     new(
-      :name => opts[:name] || "Update#{source_database.name.camelcase}",
+      :name => options[:name] || "Update#{source_database.name.camelcase}",
       :source_database => source_database,
       :target_database => target_database,
+      :options => options
     )
   end
 
@@ -42,7 +43,7 @@ class DbTools::Models::Migrations::Database < DbTools::Models::Migrations::Base
   end
 
   def prepare
-    results = source_database.compare(target_database)
+    results = source_database.compare(target_database, options)
     self.changed_tables = results[:changed]
     self.added_tables = results[:added]    
     self.deleted_tables = results[:deleted]    
@@ -51,9 +52,13 @@ class DbTools::Models::Migrations::Database < DbTools::Models::Migrations::Base
     @changes_down = []
     changed_tables.each do |key| 
       mig = DbTools::Models::Migrations::Table.init(source_database.table(key), target_database.table(key)).prepare
-      @changes_up << mig.changes_up
+      @changes_up << mig.column_changes_up
       @changes_up << ""
-      @changes_down << mig.changes_down
+      @changes_up << mig.index_changes_up
+      @changes_up << ""
+      @changes_down << mig.column_changes_down
+      @changes_down << ""
+      @changes_down << mig.index_changes_down
       @changes_down << ""
     end
 

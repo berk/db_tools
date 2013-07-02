@@ -61,9 +61,7 @@ class DbTools::Config
 
     def self.connection(key = nil)
       key ||= defaults["connection"]
-      conn = DbTools::Models::Connection.new(config['connections'][key].merge(:name => key))
-      conn.establish
-      conn
+      DbTools::Models::Connection.new(config['connections'][key].merge(:name => key))
     end
 
 end

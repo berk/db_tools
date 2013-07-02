@@ -47,10 +47,10 @@ class DbTools::Models::Database < DbTools::Models::Base
   end
 
   def tables(options = {})
-    return super unless options[:filter]
+    return super unless options["filter"]
     tbls = []
     self.attributes[:tables].each do |table|
-      next if options[:filter] and not table.name.index(options[:filter])
+      next if options["filter"] and not table.name.index(options["filter"])
       tbls << table
     end
     tbls

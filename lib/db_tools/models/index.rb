@@ -34,18 +34,15 @@ class DbTools::Models::Index < DbTools::Models::Base
 
   def options(opts = {})
     sections = []
-    # sections << ":limit => #{self.limit}" if self.limit
-    # sections << ":scale => #{self.scale}" if self.scale
-    # sections << ":precision => #{self.precision}" if self.precision
-    # sections << ":default => #{self.default}" if self.default
-    # sections << ":null => #{self.null}"
+    sections << ":unique => #{self.unique}" if self.unique
+    sections << ":as => :#{self.name}"
     sections
   end
 
   def statement(type, opts = {})
     case type
     when :add 
-      return "add_index :#{table.name}, :#{self.name}, :#{self.type}, #{options.join(', ')}"
+      return "add_index :#{table.name}, [#{self.columns.collect{|c| ":#{c}"}.join(',')}], #{options.join(', ')}"
     when :remove 
       return "remove_index :#{table.name}, :#{self.name}"
     end

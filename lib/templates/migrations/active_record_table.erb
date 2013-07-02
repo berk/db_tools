@@ -4,12 +4,20 @@ class <%=@migration.name%> < ActiveRecord::Migration
     <%=@migration.column_changes_up.join("\n    ") %>
     <%=@migration.column_additions_up.join("\n    ") %>
     <%=@migration.column_deletions_up.join("\n    ") %>
+
+    <%=@migration.index_additions_up.join("\n    ") %>
+    <%=@migration.index_deletions_up.join("\n    ") %>
+    <%=@migration.index_changes_up.join("\n    ") %>
   end
 
   def self.down
     <%=@migration.column_changes_down.join("\n    ")%>
     <%=@migration.column_additions_down.join("\n    ")%>
     <%=@migration.column_deletions_down.join("\n    ")%>
+
+    <%=@migration.index_additions_down.join("\n    ") %>
+    <%=@migration.index_deletions_down.join("\n    ") %>
+    <%=@migration.index_changes_down.join("\n    ") %>
   end
   
 end

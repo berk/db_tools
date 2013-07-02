@@ -100,7 +100,7 @@ class DbTools::Cli < DbTools::Base
     method_option :connection, :type => :string, :aliases => "-c", :required => false, :banner => "Connection name", :default => nil
     method_option :filter, :type => :string, :aliases => "-f", :required => false, :banner => "Only include tables that match filter value", :default => nil
     def tables
-      conn = DbTools::Config.connection(options[:connection])
+      conn = DbTools::Config.connection(options[:connection]).establish
       database = DbTools::Models::Database.init(conn, options)
       tables = database.tables(options).collect do |table|
         {:name => table.name, :columns => table.columns.size, :indexes => table.indexes.size}
@@ -160,6 +160,10 @@ class DbTools::Cli < DbTools::Base
       say("Changed columns: #{results[:columns][:changed].join(', ')}") if results[:columns][:changed].any?
       say("Added columns: #{results[:columns][:added].join(', ')}") if results[:columns][:added].any?
       say("Removed columns: #{results[:columns][:deleted].join(', ')}") if results[:columns][:deleted].any?
+
+      say("Changed indexes: #{results[:indexes][:changed].join(', ')}") if results[:indexes][:changed].any?
+      say("Added indexes: #{results[:indexes][:added].join(', ')}") if results[:indexes][:added].any?
+      say("Removed indexes: #{results[:indexes][:deleted].join(', ')}") if results[:indexes][:deleted].any?
       say
 
       say("ActiveRecord migration:")
@@ -176,11 +180,12 @@ class DbTools::Cli < DbTools::Base
     method_option :filter, :type => :string, :aliases => "-f", :required => false,  :banner => "Target connection", :default => nil
     def migrate
       source_conn = DbTools::Config.connection(options[:source]).establish
-      source_database = DbTools::Models::Database.init(source_conn, source_conn.tables, options)
+      source_database = DbTools::Models::Database.init(source_conn, options)
 
       target_conn = DbTools::Config.connection(options[:target]).establish
-      target_database = DbTools::Models::Database.init(target_conn, target_conn.tables, options)
+      target_database = DbTools::Models::Database.init(target_conn, options)
 
+      pp options
       results = source_database.compare(target_database, options)
 
       say("Summary of changes:")
@@ -191,7 +196,7 @@ class DbTools::Cli < DbTools::Base
       say("\nRemoved tables: #{results[:deleted].join(', ')}") if results[:deleted].any?
       say
 
-      migration = DbTools::Models::Migrations::Database.init(source_database, target_database)
+      migration = DbTools::Models::Migrations::Database.init(source_database, target_database, options)
       say(migration.generate)
       say
     end

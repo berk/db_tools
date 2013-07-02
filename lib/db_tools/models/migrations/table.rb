@@ -73,7 +73,7 @@ class DbTools::Models::Migrations::Table < DbTools::Models::Migrations::Base
 
   def column_deletions_up
     results[:columns][:deleted].collect do |key| 
-      target_table.column(key).statement(:remove) 
+      source_table.column(key).statement(:remove) 
     end
   end
 
@@ -84,17 +84,40 @@ class DbTools::Models::Migrations::Table < DbTools::Models::Migrations::Base
   end  
 
 
-  def indexes_additions_up
+  def index_additions_up
     results[:indexes][:added].collect do |key| 
       target_table.index(key).statement(:add) 
     end
   end
 
-  def indexes_additions_down
+  def index_additions_down
     results[:indexes][:added].collect do |key| 
-      target_table.column(key).statement(:remove) 
+      target_table.index(key).statement(:remove) 
     end
   end
 
+  def index_deletions_up
+    results[:indexes][:deleted].collect do |key| 
+      source_table.index(key).statement(:remove) 
+    end
+  end
+
+  def index_deletions_down
+    results[:indexes][:deleted].collect do |key| 
+      source_table.index(key).statement(:add) 
+    end
+  end
+
+  def index_changes_up
+    results[:indexes][:changed].collect do |key| 
+      [source_table.index(key).statement(:remove), target_table.index(key).statement(:add)]
+    end.flatten
+  end
+
+  def index_changes_down
+    results[:indexes][:changed].collect do |key| 
+      [target_table.index(key).statement(:remove), source_table.index(key).statement(:add)]
+    end.flatten
+  end
 
 end
